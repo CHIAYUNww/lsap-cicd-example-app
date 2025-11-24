@@ -9,7 +9,7 @@ pipeline {
         DOCKER_IMAGE = 'my-node-app'
         CONTAINER_NAME = 'my-node-app-container'
         HOST_PORT = '8081'
-        CONTAINER_PORT = '3000'
+        CONTAINER_PORT = '8081'
     }
     
     stages {
