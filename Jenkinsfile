@@ -6,8 +6,8 @@ pipeline {
     }
     
     environment {
-        DOCKER_IMAGE = 'my-node-app'
-        CONTAINER_NAME = 'my-node-app-container'
+        DOCKER_IMAGE = 'lsap-app-dev'
+        CONTAINER_NAME = 'lsap-app-dev'
         HOST_PORT = '8081'
         CONTAINER_PORT = '8081'
     }
