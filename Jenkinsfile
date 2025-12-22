@@ -1,10 +1,6 @@
 pipeline {
     agent any
-    
-    tools {
-        nodejs 'NodeJS-LTS'
-    }
-    
+        
     environment {
         DOCKER_IMAGE = 'lsap-app-dev'
         CONTAINER_NAME = 'lsap-app-dev'
