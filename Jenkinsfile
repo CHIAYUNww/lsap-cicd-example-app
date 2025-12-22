@@ -1,76 +1,41 @@
 pipeline {
-    agent any
-        
-    environment {
-        DOCKER_IMAGE = 'lsap-app-dev'
-        CONTAINER_NAME = 'lsap-app-dev'
-        HOST_PORT = '8081'
-        CONTAINER_PORT = '8081'
+  agent any
+
+  environment {
+    DOCKERHUB_USER  = "chiayun1014"
+    IMAGE_NAME      = "myapp"
+  }
+
+  stages {
+    stage('CI') {
+      steps {
+        sh '''
+          set -e
+          node -v
+          npm -v
+          npm ci || npm install
+          npm run lint || true
+        '''
+      }
     }
-    
-    stages {
-        stage('Install Dependencies') {
-            steps {
-                sh 'npm install'
-            }
-        }
-        
-        stage('Run Tests') {
-            steps {
-                sh 'npm test'
-            }
-        }
-        
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    sh "docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} ."
-                    sh "docker tag ${DOCKER_IMAGE}:${BUILD_NUMBER} ${DOCKER_IMAGE}:latest"
-                }
-            }
-        }
-        
-        stage('Deploy') {
-            steps {
-                script {
-                    // 停止並移除舊容器
-                    sh """
-                        docker stop ${CONTAINER_NAME} || true
-                        docker rm ${CONTAINER_NAME} || true
-                    """
-                    
-                    // 啟動新容器
-                    sh """
-                        docker run -d \
-                            --name ${CONTAINER_NAME} \
-                            -p ${HOST_PORT}:${CONTAINER_PORT} \
-                            ${DOCKER_IMAGE}:latest
-                    """
-                    
-                    // 等待容器啟動
-                    sh 'sleep 5'
-                }
-            }
-        }
-        
-        stage('Health Check') {
-            steps {
-                script {
-                    sh """
-                        curl -f http://localhost:${HOST_PORT}/health || exit 1
-                    """
-                }
-            }
-        }
+
+    stage('Dev Deploy') {
+      when { branch 'dev' }
+      steps {
+        sh '''
+          set -e
+          TAG="dev-${BUILD_NUMBER}"
+          IMAGE="${DOCKERHUB_USER}/${IMAGE_NAME}:${TAG}"
+
+          docker build -t "${IMAGE}" .
+          docker push "${IMAGE}"
+
+          docker rm -f dev-app || true
+          docker run -d --name dev-app -p 8081:3000 "${IMAGE}"
+          sleep 3
+          curl -fsS http://localhost:8081/health
+        '''
+      }
     }
-    
-    post {
-        failure {
-            script {
-                // 如果失敗，清理容器
-                sh "docker stop ${CONTAINER_NAME} || true"
-                sh "docker rm ${CONTAINER_NAME} || true"
-            }
-        }
-    }
+  }
 }
