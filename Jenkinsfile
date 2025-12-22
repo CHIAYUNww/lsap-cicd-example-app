@@ -22,19 +22,23 @@ pipeline {
     stage('Dev Deploy') {
       when { branch 'dev' }
       steps {
-        sh '''
-          set -e
-          TAG="dev-${BUILD_NUMBER}"
-          IMAGE="${DOCKERHUB_USER}/${IMAGE_NAME}:${TAG}"
+        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
+          sh '''
+            set -e
+            echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin
 
-          docker build -t "${IMAGE}" .
-          docker push "${IMAGE}"
+            TAG="dev-${BUILD_NUMBER}"
+            IMAGE="${DOCKERHUB_USER}/${IMAGE_NAME}:${TAG}"
 
-          docker rm -f dev-app || true
-          docker run -d --name dev-app -p 8081:3000 "${IMAGE}"
-          sleep 3
-          curl -fsS http://localhost:8081/health
-        '''
+            docker build -t "${IMAGE}" .
+            docker push "${IMAGE}"
+
+            docker rm -f dev-app || true
+            docker run -d --name dev-app -p 8081:3000 "${IMAGE}"
+            sleep 3
+            curl -fsS http://localhost:8081/health
+          '''
+        }
       }
     }
   }
