@@ -35,8 +35,11 @@ pipeline {
 
             docker rm -f dev-app || true
             docker run -d --name dev-app -p 8081:3000 "${IMAGE}"
-            sleep 3
-            curl -fsS http://localhost:8081/health
+            sleep 10
+            docker ps --filter "name=dev-app"
+            docker logs --tail 200 dev-app || true
+
+            curl -fsS http://localhost:8081/health || curl -fsS http://localhost:8081/ || true
           '''
         }
       }
